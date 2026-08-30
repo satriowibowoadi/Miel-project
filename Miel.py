@@ -78,6 +78,18 @@ def complete_task(task_name):
     db.commit()
 
     return f"Tugas '{task_name}'sudah di tandai sebagai selesai."
+
+def delete_task(task_name):
+    cursor.execute(
+        """DELETE FROM tasks
+        WHERE task = ?
+        """,
+        (task_name,)
+    )
+
+    db.commit()
+
+    return f"Tugas '{task_name}'berhasil di hapus."
 # =========================
 # MIEL
 # =========================
@@ -116,6 +128,16 @@ while True:
     if user_input.lower() in ["keluar", "exit", "quit"]:
         print("MIEL: Baik, sampai jumpa.")
         break
+
+    if user_input.lower().startswith("hapus tugas"):
+        task_name = user_input[11:].strip() 
+
+        if task_name:
+            print("MIEL: ",delete_task(task_name))
+        else:
+            print("MIEL: Tugas mana yang mau dihapus")
+
+            continue
 
     if "tugas" in user_input.lower():
         print("MIEL:", get_tasks())
