@@ -1,8 +1,6 @@
 import ollama
 import json
 
-user_input = input("Kamu: ")
-
 response = ollama.chat(
     model="qwen2.5:3b",
     messages=[
