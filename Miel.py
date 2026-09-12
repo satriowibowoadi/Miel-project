@@ -21,7 +21,18 @@ CREATE TABLE IF NOT EXISTS tasks (
 """)
 
 db.commit()
+#========================
+#Memory MIEL
+#=======================
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS memories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL
+)
+""")
 
+db.commit()
 
 # =========================
 # MENAMPILKAN TUGAS
@@ -88,6 +99,37 @@ def delete_task(task_name):
     db.commit()
 
     return f"Tugas '{task_name}'berhasil di hapus."
+
+def save_memory(key, value):
+    cursor.execute(
+        """INSERT INTO memories (key, value)
+        VALUES (?, ?)
+        """,
+        (key, value)
+    )
+
+    db.commit()
+
+    return f"Aku ingat, {key} kamu adalah {value}."
+
+def get_memory(key):
+    cursor.execute(
+        """SELECT value
+        FROM memories
+        WHERE key = ?
+        ORDER BY id DESC
+        LIMIT 1
+        """,
+        (key,)
+    )
+
+    memory = cursor.fetchone()
+
+    if not memory:
+        return None
+
+    return memory[0]
+
 # =========================
 # MIEL
 # =========================
@@ -201,9 +243,9 @@ ATURAN UTAMA:
 
 4. Jangan pernah mengarang deadline.
 
-5. Pisahkan nama tugas dan deadline dengan benar.
+5. Jangan pernah mengarang key atau value memory.
 
-6. Kata "tugas", "PR", "pekerjaan", atau "assignment" tidak otomatis menjadi nama tugas. Tentukan dari konteks kalimat.
+6. Pisahkan nama tugas dan deadline dengan benar.
 
 7. Jika pengguna mengatakan memiliki atau ingin menambahkan tugas baru, gunakan action "add_task".
 
@@ -215,53 +257,85 @@ ATURAN UTAMA:
 
 11. Jika pengguna meminta menghapus, membatalkan, atau membuang suatu tugas, gunakan action "delete_task".
 
-12. Jika pengguna hanya menyapa, bertanya, bercanda, memberikan informasi umum, atau mengobrol tanpa meminta tindakan terhadap tugas, gunakan action "chat".
+12. Jika pengguna meminta MIEL mengingat, menyimpan, mencatat, atau mengingat kembali informasi pribadi yang diberikan pengguna, gunakan action "remember".
 
-13. Jika pengguna tidak menyebut nama tugas dengan jelas, nilai "task" harus null.
+13. Jika pengguna hanya menyapa, bertanya, bercanda, memberikan informasi umum, atau mengobrol tanpa meminta tindakan terhadap tugas atau memory, gunakan action "chat".
 
-14. Jika pengguna tidak menyebut deadline, nilai "deadline" harus null.
+14. Jika pengguna tidak menyebut nama tugas dengan jelas, nilai "task" harus null.
 
-15. Jangan memasukkan deadline ke dalam nama tugas.
+15. Jika pengguna tidak menyebut deadline, nilai "deadline" harus null.
 
-16. Jangan memasukkan kata "deadline", "besok", "lusa", nama hari, tanggal, atau waktu ke dalam nama tugas jika kata tersebut berfungsi sebagai informasi waktu.
+16. Jika action bukan "remember", nilai "key" harus null dan nilai "value" harus null.
 
-17. Pahami variasi bahasa sehari-hari, bahasa informal, singkatan, dan susunan kalimat yang berbeda. Jangan hanya mencocokkan kalimat dengan contoh.
+17. Jika action bukan "remember", jangan mengisi key atau value dengan informasi yang dibuat-buat.
 
-18. Pahami maksud kalimat berdasarkan keseluruhan konteks, bukan berdasarkan satu kata saja.
+18. Jika pengguna meminta MIEL mengingat sesuatu, pisahkan jenis informasi sebagai "key" dan isi informasinya sebagai "value".
 
-19. "Besok", "lusa", "hari Senin", "hari Jumat", "tanggal 20", "jam 10", dan informasi waktu lainnya dapat menjadi deadline jika digunakan sebagai batas waktu tugas.
+19. Contoh: "ingat nama aku Rio" berarti key = "nama" dan value = "Rio".
 
-20. Jika pengguna mengatakan "aku punya tugas matematika", pahami bahwa pengguna memiliki tugas bernama "matematika".
+20. Contoh: "ingat aku kuliah di POLIJE" berarti key = "kampus" dan value = "POLIJE".
 
-21. Jika pengguna mengatakan "aku ada tugas matematika deadline besok", maka task adalah "matematika" dan deadline adalah "besok".
+21. Contoh: "ingat aku suka God Hand" berarti key = "suka" dan value = "God Hand".
 
-22. Jika pengguna mengatakan "tolong tambahkan tugas matematika", maka gunakan action "add_task".
+22. Contoh: "ingat ulang tahunku tanggal 10 Mei" berarti key = "ulang tahun" dan value = "10 Mei".
 
-23. Jika pengguna mengatakan "tugas matematika sudah selesai", maka gunakan action "complete_task" dengan task "matematika".
+23. Jangan memasukkan deadline ke dalam nama tugas.
 
-24. Jika pengguna mengatakan "hapus tugas matematika", maka gunakan action "delete_task" dengan task "matematika".
+24. Jangan memasukkan kata "deadline", "besok", "lusa", nama hari, tanggal, atau waktu ke dalam nama tugas jika kata tersebut berfungsi sebagai informasi waktu.
 
-25. Jika pengguna mengatakan "tugas saya apa saja?", "aku punya tugas apa?", atau "coba cek tugas", gunakan action "get_tasks".
+25. "Besok", "lusa", "hari Senin", "hari Jumat", "tanggal 20", "jam 10", dan informasi waktu lainnya dapat menjadi deadline jika digunakan sebagai batas waktu tugas.
 
-26. Jika pengguna mengatakan sesuatu yang ambigu dan informasi yang diperlukan tidak tersedia, jangan menebak. Gunakan null pada bagian informasi yang tidak diketahui.
+26. Pahami variasi bahasa sehari-hari, bahasa informal, singkatan, dan susunan kalimat yang berbeda. Jangan hanya mencocokkan kalimat dengan contoh.
 
-27. Selalu pertahankan informasi yang diberikan pengguna tanpa mengubah makna.
+27. Pahami maksud kalimat berdasarkan keseluruhan konteks, bukan berdasarkan satu kata saja.
 
-28. Jangan menambahkan kata-kata yang tidak diperlukan ke dalam nilai task.
+28. Jika pengguna mengatakan "aku punya tugas matematika", pahami bahwa pengguna memiliki tugas bernama "matematika".
 
-29. Nama tugas dapat terdiri dari satu atau beberapa kata.
+29. Jika pengguna mengatakan "aku ada tugas matematika deadline besok", maka task adalah "matematika" dan deadline adalah "besok".
 
-30. Nama tugas dapat berupa nama mata kuliah, proyek, pekerjaan, laporan, praktikum, atau aktivitas lainnya.
+30. Jika pengguna mengatakan "tolong tambahkan tugas matematika", gunakan action "add_task".
 
-31. Jika pengguna menyebut beberapa informasi dalam satu kalimat, pisahkan setiap informasi ke field yang sesuai.
+31. Jika pengguna mengatakan "tugas matematika sudah selesai", gunakan action "complete_task" dengan task "matematika".
 
-32. Jika pengguna meminta tindakan terhadap tugas, prioritaskan action tugas daripada "chat".
+32. Jika pengguna mengatakan "hapus tugas matematika", gunakan action "delete_task" dengan task "matematika".
 
-33. Jika pengguna hanya membicarakan tugas tanpa meminta tindakan dan tanpa menyatakan ingin menambahkan, melihat, menyelesaikan, atau menghapus tugas, gunakan action "chat".
+33. Jika pengguna mengatakan "tugas saya apa saja?", "aku punya tugas apa?", atau "coba cek tugas", gunakan action "get_tasks".
 
-34. Output harus selalu berupa JSON yang valid.
+34. Jika pengguna mengatakan sesuatu yang ambigu dan informasi yang diperlukan tidak tersedia, jangan menebak. Gunakan null pada bagian informasi yang tidak diketahui.
 
-35. Jangan memberikan penjelasan, markdown, atau teks tambahan di luar JSON.
+35. Selalu pertahankan informasi yang diberikan pengguna tanpa mengubah makna.
+
+36. Jangan menambahkan kata-kata yang tidak diperlukan ke dalam nilai task.
+
+37. Nama tugas dapat terdiri dari satu atau beberapa kata.
+
+38. Nama tugas dapat berupa nama mata kuliah, proyek, pekerjaan, laporan, praktikum, atau aktivitas lainnya.
+
+39. Jika pengguna menyebut beberapa informasi dalam satu kalimat, pisahkan setiap informasi ke field yang sesuai.
+
+40. Jika pengguna meminta tindakan terhadap tugas, prioritaskan action tugas daripada "chat".
+
+41. Jika pengguna meminta MIEL mengingat sesuatu, prioritaskan action "remember" daripada "chat".
+
+42. Jika pengguna hanya membicarakan tugas tanpa meminta tindakan dan tanpa menyatakan ingin menambahkan, melihat, menyelesaikan, atau menghapus tugas, gunakan action "chat".
+
+43. Jika pengguna hanya menyebut suatu informasi tanpa meminta MIEL untuk mengingatnya, gunakan action "chat", bukan "remember".
+
+44. Jangan mengubah percakapan biasa menjadi memory secara otomatis.
+
+45. Jangan menyimpan informasi sensitif atau informasi pribadi kecuali pengguna secara jelas meminta MIEL untuk mengingatnya.
+
+46. Output harus selalu berupa JSON yang valid.
+
+47. Jangan memberikan penjelasan, markdown, atau teks tambahan di luar JSON.
+
+48. Jika user menanyakan informasi yang sebelumnya diminta untuk diingat, gunakan action recall_memory.
+49. Jika user menanyakan nama dirinya seperti "nama aku siapa", gunakan recall_memory dengan key "nama".
+50. Jika user menanyakan kampusnya seperti "aku kuliah dimana", gunakan recall_memory dengan key "kampus".
+51. Jika user menanyakan sesuatu yang pernah disimpan, jangan menebak. Gunakan recall_memory.
+52. Jika user bertanya "aku suka apa", "aku suka apa aja", atau pertanyaan serupa tentang hal yang disukai, gunakan recall_memory dengan key "suka".
+53. Saat mengingat kalimat "ingat aku suka X", gunakan key "suka" dan value X.
+54. Saat recall_memory, key harus disesuaikan dengan informasi yang ditanyakan user, bukan menggunakan key dari pertanyaan sebelumnya.
 
 
 Action yang tersedia:
@@ -269,9 +343,12 @@ Action yang tersedia:
 - get_tasks
 - complete_task
 - delete_task
--chat
-
+- remember
+- recall_memory
+- chat
 CONTOH:
+
+
 
 Input:
 halo MIEL
@@ -429,6 +506,8 @@ Jawab HANYA JSON dengan format berikut:
 "action": "nama_action",
 "task": "nama_tugas",
 "deadline": "deadline atau null"
+"key": "memory_key atau null"
+"value": "memory_value atau null"
 }
 """
 
@@ -489,15 +568,31 @@ Jawab HANYA JSON dengan format berikut:
 
     elif data["action"] == "delete_task":
 
-        if data["task"] is None:
-            print("MIEL: Tugas mana yang mau dihapus?")
+        print(
+            "MIEL:",
+            delete_task(data["task"])
+        )
+
+    elif data["action"] == "remember":
+
+        if data["key"] is None or data["value"] is None:
+            print("MIEL: informasinya apa yang mau aku inget?")
         else:
             print(
                 "MIEL:",
-                delete_task(data["task"])
+                save_memory(data["key"], data["value"])
             )
 
+    elif data["action"] == "recall_memory":
+
+        memory = get_memory(data["key"])
+
+    if memory is None:
+        print("MIEL: Aku belum punya informasi itu.")
     else:
+        print("MIEL:", memory)
+
+else:
 
         #========================
         #CHAT BIASA
