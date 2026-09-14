@@ -109,9 +109,15 @@ def save_memory(key, value):
     )
 
     db.commit()
-
-    return f"Aku ingat, {key} kamu adalah {value}."
-
+    if key == "suka":
+        return f"Aku ingat kamu suka {value}."
+    elif key == "nama":
+        return f"Aku ingat nama kamu {value}."
+    elif key == "kampus":
+        return f"Aku ingat kamu kuliah di {value}."
+    else:
+        return f"Oke, aku ingat {key}: {value}."
+    
 def get_memory(key):
     cursor.execute(
         """SELECT value
@@ -259,7 +265,7 @@ ATURAN UTAMA:
 
 12. Jika pengguna meminta MIEL mengingat, menyimpan, mencatat, atau mengingat kembali informasi pribadi yang diberikan pengguna, gunakan action "remember".
 
-13. Jika pengguna hanya menyapa, bertanya, bercanda, memberikan informasi umum, atau mengobrol tanpa meminta tindakan terhadap tugas atau memory, gunakan action "chat".
+13. Jika pengguna menanyakan kembali informasi yang sudah pernah disimpan di memory, gunakan action "recall_memory", bukan "remember".
 
 14. Jika pengguna tidak menyebut nama tugas dengan jelas, nilai "task" harus null.
 
@@ -333,9 +339,21 @@ ATURAN UTAMA:
 49. Jika user menanyakan nama dirinya seperti "nama aku siapa", gunakan recall_memory dengan key "nama".
 50. Jika user menanyakan kampusnya seperti "aku kuliah dimana", gunakan recall_memory dengan key "kampus".
 51. Jika user menanyakan sesuatu yang pernah disimpan, jangan menebak. Gunakan recall_memory.
-52. Jika user bertanya "aku suka apa", "aku suka apa aja", atau pertanyaan serupa tentang hal yang disukai, gunakan recall_memory dengan key "suka".
-53. Saat mengingat kalimat "ingat aku suka X", gunakan key "suka" dan value X.
-54. Saat recall_memory, key harus disesuaikan dengan informasi yang ditanyakan user, bukan menggunakan key dari pertanyaan sebelumnya.
+52. Jika user bertanya tentang sesuatu yang pernah diminta untuk diingat, gunakan action recall_memory.
+
+53. Key recall_memory harus selalu mengikuti informasi yang sedang ditanyakan.
+
+54. Jika user bertanya "nama aku siapa", gunakan key "nama".
+
+55. Jika user bertanya "aku suka apa", "aku suka apa aja", atau "apa yang aku suka", gunakan key "suka".
+
+56. Jika user bertanya "aku kuliah dimana", "kampus aku apa", atau pertanyaan tentang kampus, gunakan key "kampus".
+
+57. Jika user bertanya tentang ulang tahun, gunakan key "ulang tahun".
+
+58. Jangan menggunakan key "nama" kecuali user memang sedang menanyakan nama.
+
+59. Jangan menggunakan key dari pertanyaan sebelumnya jika tidak sesuai dengan pertanyaan saat ini.
 
 
 Action yang tersedia:
@@ -347,6 +365,30 @@ Action yang tersedia:
 - recall_memory
 - chat
 CONTOH:
+
+Input:
+nama aku siapa?
+
+Output:
+{
+    "action": "recall_memory",
+    "task": null,
+    "deadline": null,
+    "key": "nama",
+    "value": null
+}
+
+Input:
+aku suka apa?
+
+Output:
+{
+    "action": "recall_memory",
+    "task": null,
+    "deadline": null,
+    "key": "suka",
+    "value": null
+}
 
 
 
@@ -587,16 +629,16 @@ Jawab HANYA JSON dengan format berikut:
 
         memory = get_memory(data["key"])
 
-    if memory is None:
-        print("MIEL: Aku belum punya informasi itu.")
+        if memory is None:
+            print("MIEL: Aku belum punya informasi itu.")
+        else:
+            print("MIEL:", memory)
+
     else:
-        print("MIEL:", memory)
 
-else:
-
-        #========================
-        #CHAT BIASA
-        #========================
+        # ========================
+        # CHAT BIASA
+        # ========================
 
         response = ollama.chat(
             model="qwen2.5:3b",
