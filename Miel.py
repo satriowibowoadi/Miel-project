@@ -154,7 +154,7 @@ while True:
     #AI PARSER
     #========================
     response = ollama.chat(
-        model="qwen2.5:3b",
+        model="gemma3:4b",
         messages=[
             {
                 "role": "system",
@@ -641,7 +641,7 @@ Jawab HANYA JSON dengan format berikut:
         # ========================
 
         response = ollama.chat(
-            model="qwen2.5:3b",
+            model="gemma3:4b",
             messages=[
                 {
                     "role": "system",
